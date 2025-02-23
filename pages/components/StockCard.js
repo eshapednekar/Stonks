@@ -4,7 +4,7 @@ import styled from "styled-components";
 const StockCard = ({ stock, onBuy, onSell }) => {
   return (
     <Card>
-      <h2>{stock.name || "Unknown Stock"}</h2>
+      <h2>{stock?.name || "Unknown Stock"}</h2>
       <p>Price: ${stock.price ? stock.price.toFixed(2) : "Loading..."}</p>
       <ButtonContainer>
         <Button onClick={() => onBuy(stock)}>Buy</Button>
