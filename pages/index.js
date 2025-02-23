@@ -44,12 +44,15 @@ const Home = () => {
 
   return (
     <Container>
-      <h1>📈 Stonks Trading Simulator</h1>
-      <StockGrid>
+      <h1> Stonks 📈</h1>
+    {stocks.length === 0 ? (
+      <p>Loading stocks...</p>
+    ) : (<StockGrid>
         {stocks.map((stock, index) => (
           <StockCard key={index} stock={stock} onBuy={handleBuy} onSell={handleSell} />
         ))}
       </StockGrid>
+    )}
     </Container>
   );
 };
