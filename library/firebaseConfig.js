@@ -2,12 +2,12 @@ import { initializeApp } from "firebase/app";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBb8A9FOHfzjK3nH6EuzkX2vSvEJD3zNg",
+  apiKey: "AIzaSyBba8A9FOHfzjK3nH6EuzkX2vSvEJD3zNg",
   authDomain: "stonks-6456a.firebaseapp.com",
   projectId: "stonks-6456a",
-  storageBucket: "stonks-6456a.appspot.com",
-  messagingSenderId: "279444038679",
-  appId: "1:279444038679:web:76d8518c4b604b1af09c92",
+  storageBucket: "stonks-6456a.firebasestorage.app",
+  messagingSenderId: "279444030679",
+  appId: "1:279444030679:web:76d8518c4b604b1af09c92",
   measurementId: "G-TGKX82S19D"
 };
 

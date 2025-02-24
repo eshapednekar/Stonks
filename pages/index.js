@@ -1,23 +1,32 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
 import styled from "styled-components";
-import { auth, provider, signInWithPopup, signInWithEmailAndPassword } from "../library/firebaseConfig";
+import { auth, provider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "../library/firebaseConfig";
 
 const Login = () => {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false); // Toggle for Sign-up/Login
 
-  const handleLogin = async (e) => {
+  const handleAuth = async (e) => {
     e.preventDefault();
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard"); // Redirect after login
+      if (isRegistering) {
+        await createUserWithEmailAndPassword(auth, email, password);
+        console.log("User registered successfully:", email);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+        console.log("User logged in successfully:", email);
+      }
+      router.push("/dashboard");
     } catch (err) {
-      setError("Invalid credentials. Try again.");
+      console.error("Firebase Auth Error:", err.code, err.message);
+      setError(`Error: ${err.message}`);
     }
   };
+  
 
   const handleGoogleLogin = async () => {
     try {
@@ -31,14 +40,17 @@ const Login = () => {
   return (
     <Container>
       <LoginBox>
-        <h1>🔑 Login to Stonks</h1>
+        <h1>{isRegistering ? "📝 Sign Up for Stonks" : "🔑 Login to Stonks"}</h1>
         {error && <ErrorMessage>{error}</ErrorMessage>}
-        <Form onSubmit={handleLogin}>
+        <Form onSubmit={handleAuth}>
           <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          <Button type="submit">Login</Button>
+          <Button type="submit">{isRegistering ? "Sign Up" : "Login"}</Button>
           <GoogleButton onClick={handleGoogleLogin}>Sign in with Google</GoogleButton>
         </Form>
+        <ToggleText onClick={() => setIsRegistering(!isRegistering)}>
+          {isRegistering ? "Already have an account? Login" : "New user? Sign Up"}
+        </ToggleText>
       </LoginBox>
     </Container>
   );
@@ -97,4 +109,13 @@ const GoogleButton = styled(Button)`
 
 const ErrorMessage = styled.p`
   color: red;
+`;
+
+const ToggleText = styled.p`
+  color: lightgray;
+  cursor: pointer;
+  margin-top: 10px;
+  &:hover {
+    color: white;
+  }
 `;
