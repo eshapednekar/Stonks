@@ -62,6 +62,7 @@ const Dashboard = () => {
     <Container>
       <h1> Stonks 📈</h1>
       <Button onClick={handleLogout}>Logout</Button>
+      <Button onClick={() => router.push("/portfolio")}>View Portfolio</Button>
     {stocks.length === 0 ? (
       <p>Loading stocks...</p>
     ) : (<StockGrid>
