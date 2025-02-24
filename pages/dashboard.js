@@ -91,3 +91,17 @@ const StockGrid = styled.div`
   gap: 20px;
   padding: 20px;
 `;
+
+const Button = styled.button`
+  background: red;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  &:hover {
+    background: darkred;
+  }
+`;
