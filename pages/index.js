@@ -1,76 +1,100 @@
-import React, { useEffect, useState } from "react";
-import Head from "next/head";
-import Image from "next/image";
+import React, { useState } from "react";
+import { useRouter } from "next/router";
 import styled from "styled-components";
-import StockCard from "./components/StockCard";
+import { auth, provider, signInWithPopup, signInWithEmailAndPassword } from "../library/firebaseConfig";
 
-const STOCKS = ["SkibidiCoin", "RizzToken", "SigmaStock", "MemeCorp", "GrindSetInc"];
+const Login = () => {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-const Home = () => {
-  const [stocks, setStocks] = useState([]);
-
-  useEffect(() => {
-    fetchStockPrices();
-    const interval = setInterval(fetchStockPrices, 5000); // Update every 5s
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchStockPrices = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
     try {
-      const responses = await Promise.all(
-        STOCKS.map(async (stock) => {
-          const res = await fetch(
-            "https://www.random.org/integers/?num=1&min=-5&max=5&col=1&base=10&format=plain&rnd=new"
-          );
-          const text = await res.text();
-          const change = parseFloat(text.trim());
-  
-          return { name: stock, price: 100 + (change / 100) * 100 };
-        })
-      );
-      setStocks(responses);
-    } catch (error) {
-      console.error("Error fetching stock prices:", error);
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push("/dashboard"); // Redirect after login
+    } catch (err) {
+      setError("Invalid credentials. Try again.");
     }
   };
 
-  const handleBuy = (stock) => {
-    alert(`You bought ${stock.name} at $${stock.price.toFixed(2)}`);
-  };
-
-  const handleSell = (stock) => {
-    alert(`You sold ${stock.name} at $${stock.price.toFixed(2)}`);
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithPopup(auth, provider);
+      router.push("/dashboard");
+    } catch (err) {
+      setError("Google sign-in failed.");
+    }
   };
 
   return (
     <Container>
-      <h1> Stonks 📈</h1>
-    {stocks.length === 0 ? (
-      <p>Loading stocks...</p>
-    ) : (<StockGrid>
-        {stocks.map((stock, index) => (
-          <StockCard key={index} stock={stock} onBuy={handleBuy} onSell={handleSell} />
-        ))}
-      </StockGrid>
-    )}
+      <LoginBox>
+        <h1>🔑 Login to Stonks</h1>
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+        <Form onSubmit={handleLogin}>
+          <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <Button type="submit">Login</Button>
+          <GoogleButton onClick={handleGoogleLogin}>Sign in with Google</GoogleButton>
+        </Form>
+      </LoginBox>
     </Container>
   );
 };
 
-export default Home;
+export default Login;
 
 // Styled Components
 const Container = styled.div`
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #0f0f0f;
   color: white;
-  background: #0f0f0f;
-  min-height: 100vh;
-  padding: 20px;
 `;
 
-const StockGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  padding: 20px;
+const LoginBox = styled.div`
+  background: #1a1a2e;
+  padding: 40px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+`;
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const Input = styled.input`
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+`;
+
+const Button = styled.button`
+  background: #4caf50;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  &:hover {
+    background: #45a049;
+  }
+`;
+
+const GoogleButton = styled(Button)`
+  background: #db4437;
+  &:hover {
+    background: #c1351d;
+  }
+`;
+
+const ErrorMessage = styled.p`
+  color: red;
 `;
