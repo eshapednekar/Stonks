@@ -11,6 +11,10 @@ const Dashboard = () => {
   const router = useRouter();
   const [stocks, setStocks] = useState([]);
   const [user, setUser] = useState(null);
+  const [selectedStock, setSelectedStock] = useState(null);
+  const [transactionType, setTransactionType] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     onAuthStateChanged(auth, (currentUser) => {
@@ -45,12 +49,38 @@ const Dashboard = () => {
     }
   };
 
-  const handleBuy = (stock) => {
-    alert(`You bought ${stock.name} at $${stock.price.toFixed(2)}`);
+  const handleTransaction = (stock, type) => {
+    setSelectedStock(stock);
+    setTransactionType(type);
+    setShowModal(true);
+    setQuantity(1);
   };
 
-  const handleSell = (stock) => {
-    alert(`You sold ${stock.name} at $${stock.price.toFixed(2)}`);
+  const confirmTransaction = () => {
+    let portfolio = JSON.parse(localStorage.getItem("portfolio")) || [];
+    
+    if (transactionType === "buy") {
+      const existingStock = portfolio.find((s) => s.name === selectedStock.name);
+      if (existingStock) {
+        existingStock.quantity += quantity;
+      } else {
+        portfolio.push({ name: selectedStock.name, price: selectedStock.price, quantity });
+      }
+    } else {
+      const stockIndex = portfolio.findIndex((s) => s.name === selectedStock.name);
+      if (stockIndex !== -1 && portfolio[stockIndex].quantity >= quantity) {
+        portfolio[stockIndex].quantity -= quantity;
+        if (portfolio[stockIndex].quantity === 0) {
+          portfolio.splice(stockIndex, 1);
+        }
+      } else {
+        alert("Not enough shares to sell!");
+        return;
+      }
+    }
+
+    localStorage.setItem("portfolio", JSON.stringify(portfolio));
+    setShowModal(false);
   };
 
   const handleLogout = async () => {
@@ -61,19 +91,41 @@ const Dashboard = () => {
   return (
     <Container>
       <h1> Stonks 📈</h1>
-      <Button onClick={handleLogout}>Logout</Button>
       <Button onClick={() => router.push("/portfolio")}>View Portfolio</Button>
+      <Button onClick={handleLogout}>Logout</Button>     
     {stocks.length === 0 ? (
       <p>Loading stocks...</p>
     ) : (<StockGrid>
-        {stocks.map((stock, index) => (
-          <StockCard key={index} stock={stock} onBuy={handleBuy} onSell={handleSell} />
-        ))}
-      </StockGrid>
+      {stocks.map((stock, index) => (
+        <StockCard
+          key={index}
+          stock={stock}
+          onBuy={() => handleTransaction(stock, "buy")}
+          onSell={() => handleTransaction(stock, "sell")}
+        />
+      ))}
+    </StockGrid>
+    )}
+    {showModal && (
+      <Modal>
+        <ModalContent>
+          <h2>{transactionType === "buy" ? "Buy" : "Sell"} {selectedStock?.name}</h2>
+          <p>Price: ${selectedStock?.price.toFixed(2)}</p>
+          <label>Quantity:</label>
+          <input type="number" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} min="1" />
+          <ModalButtons>
+          <Button onClick={confirmTransaction}>Confirm</Button>
+          <Button onClick={() => setShowModal(false)}>Cancel</Button>
+        </ModalButtons>
+        </ModalContent>
+      </Modal>
+    
+
     )}
     </Container>
   );
 };
+
 
 export default Dashboard;
 
@@ -86,6 +138,26 @@ const Container = styled.div`
   padding: 20px;
 `;
 
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+`;
+
+const Button = styled.button`
+  background: #007bff;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  &:hover {
+    background: #0056b3;
+  }
+`;
+
 const StockGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -93,16 +165,28 @@ const StockGrid = styled.div`
   padding: 20px;
 `;
 
-const Button = styled.button`
-  background: red;
-  color: white;
-  padding: 10px;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-  &:hover {
-    background: darkred;
-  }
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const ModalContent = styled.div`
+  background: #1a1a2e;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+`;
+
+const ModalButtons = styled.div`
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
 `;
