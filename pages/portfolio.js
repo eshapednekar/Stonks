@@ -42,7 +42,7 @@ const Portfolio = () => {
         <h1> Portfolio</h1>
         <ControlsColumn>
           <div>
-            <Button onClick={() => router.push("/dashboard")}>Go to Dashboard</Button>
+            <Button onClick={() => router.push("/dashboard")}>View Dashboard</Button>
             <Button onClick={handleLogout}>Logout</Button>
           </div> 
         </ControlsColumn>
@@ -59,7 +59,7 @@ const Portfolio = () => {
               <StockItem key={index}>
                 <h3>{stock.name}</h3>
                 <p>Shares: {stock.quantity}</p>
-                <p>Avg Purchase Price: ${stock.avgPrice.toFixed(2)}</p>
+                <p>Avg Purchase Price: ${stock.avgPrice ? stock.avgPrice.toFixed(2) : "N/A"}</p>
               </StockItem>
             ))}
           </StockList>
