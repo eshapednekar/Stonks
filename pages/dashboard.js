@@ -58,40 +58,38 @@ const Dashboard = () => {
 
   const confirmTransaction = () => {
     let portfolio = JSON.parse(localStorage.getItem("portfolio")) || [];
-    let balance = parseFloat(localStorage.getItem("balance")) || 10000; // Default to $10,000 
-
+    let balance = parseFloat(localStorage.getItem("balance")) || 10000;
+  
     if (transactionType === "buy") {
       const cost = selectedStock.price * quantity;
       if (cost > balance) {
         alert("Not enough funds to complete this purchase!");
         return;
       }
-
+  
       const existingStock = portfolio.find((s) => s.name === selectedStock.name);
       if (existingStock) {
-        const prevTotalCost = existingStock.avgPrice * existingStock.quantity;
+        const prevTotalCost = (existingStock.avgPrice || 0) * existingStock.quantity;
         const newTotalCost = selectedStock.price * quantity;
         const newTotalQuantity = existingStock.quantity + quantity;
-
+  
         existingStock.avgPrice = (prevTotalCost + newTotalCost) / newTotalQuantity;
         existingStock.quantity = newTotalQuantity;
       } else {
-        portfolio.push({ 
-          name: selectedStock.name, 
-          avgPrice: selectedStock.price, 
+        portfolio.push({
+          name: selectedStock.name,
+          avgPrice: selectedStock.price || 0,
           quantity,
-          avgPrice: selectedStock.price,
-          quantity
         });
       }
-
-      balance -= cost; // Deduct money for buying stocks
+  
+      balance -= cost;
     } else {
       const stockIndex = portfolio.findIndex((s) => s.name === selectedStock.name);
       if (stockIndex !== -1 && portfolio[stockIndex].quantity >= quantity) {
         portfolio[stockIndex].quantity -= quantity;
-        balance += selectedStock.price * quantity; // Add money when selling
-
+        balance += selectedStock.price * quantity;
+  
         if (portfolio[stockIndex].quantity === 0) {
           portfolio.splice(stockIndex, 1);
         }
@@ -100,12 +98,12 @@ const Dashboard = () => {
         return;
       }
     }
-
+  
     localStorage.setItem("portfolio", JSON.stringify(portfolio));
-    localStorage.setItem("balance", balance.toFixed(2)); // Store balance
+    localStorage.setItem("balance", balance.toFixed(2));
     setShowModal(false);
   };
-  
+   
   
 
   const handleLogout = async () => {
