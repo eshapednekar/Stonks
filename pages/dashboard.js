@@ -78,8 +78,8 @@ const Dashboard = () => {
       } else {
         portfolio.push({ 
           name: selectedStock.name, 
-          avgPrice: selectedStock.price, 
-          quantity 
+          avgPrice: selectedStock.price,
+          quantity
         });
       }
   
@@ -175,13 +175,13 @@ const Controls = styled.div`
 
 const Header = styled.div`
   display: flex;
-  align-items: start;
   justify-content: space-between;
-  text-align: center;
-  margin-bottom: 20px;
+  align-items: center;
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 `;
-
 const Button = styled.button`
   background: #007bff;
   color: white;
