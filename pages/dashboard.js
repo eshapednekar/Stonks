@@ -79,7 +79,7 @@ const Dashboard = () => {
         portfolio.push({ 
           name: selectedStock.name, 
           avgPrice: selectedStock.price, 
-          quantity 
+          quantity,
           avgPrice: selectedStock.price,
           quantity
         });
