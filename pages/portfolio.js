@@ -49,7 +49,7 @@ const Portfolio = () => {
         </ControlsColumn>
       </Header>
       <BalanceRow>
-          <h2>💰 Current Balance: ${balance.toFixed(2)}</h2>
+          <h2>💰Balance: ${balance.toFixed(2)}</h2>
       </BalanceRow>
       {portfolio.length === 0 ? (
         <p>You don't own any stocks yet.</p>
