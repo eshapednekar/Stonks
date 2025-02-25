@@ -117,6 +117,7 @@ const Dashboard = () => {
       <h1> Stonks</h1>
       <Controls>
       <Button onClick={() => router.push("/portfolio")}>View Portfolio</Button>
+      <Button onClick={() => router.push("/settings")}>Settings</Button>
       <Button onClick={handleLogout}>Logout</Button> 
       </Controls>    
       </Header>

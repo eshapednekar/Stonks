@@ -43,6 +43,7 @@ const Portfolio = () => {
         <ControlsColumn>
           <div>
             <Button onClick={() => router.push("/dashboard")}>View Dashboard</Button>
+            <Button onClick={() => router.push("/settings")}>Settings</Button>
             <Button onClick={handleLogout}>Logout</Button>
           </div> 
         </ControlsColumn>
