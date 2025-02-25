@@ -5,7 +5,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import styled from "styled-components";
 import StockCard from "./components/StockCard";
 
-const STOCKS = ["SkibidiCoin", "RizzToken", "SigmaStock", "MemeCorp", "GrindSetInc"];
+const STOCKS = ["SkibidiCoin", "RizzToken", "SigmaStock", "MemeCorp", "BrainRotInc"];
 
 const Dashboard = () => {
   const router = useRouter();
@@ -26,7 +26,7 @@ const Dashboard = () => {
     });
 
     fetchStockPrices();
-    const interval = setInterval(fetchStockPrices, 5000); // Update every 5s
+    const interval = setInterval(fetchStockPrices, 10000); // Update every 5s
     return () => clearInterval(interval);
   }, []);
 
@@ -62,9 +62,14 @@ const Dashboard = () => {
     if (transactionType === "buy") {
       const existingStock = portfolio.find((s) => s.name === selectedStock.name);
       if (existingStock) {
-        existingStock.quantity += quantity;
+        const prevTotalCost = existingStock.avgPrice * existingStock.quantity;
+      const newTotalCost = selectedStock.price * quantity;
+      const newTotalQuantity = existingStock.quantity + quantity;
+
+      existingStock.avgPrice = (prevTotalCost + newTotalCost) / newTotalQuantity;
+      existingStock.quantity = newTotalQuantity;
       } else {
-        portfolio.push({ name: selectedStock.name, price: selectedStock.price, quantity });
+        portfolio.push({ name: selectedStock.name, avgPrice: selectedStock.price, quantity });
       }
     } else {
       const stockIndex = portfolio.findIndex((s) => s.name === selectedStock.name);
@@ -148,6 +153,7 @@ const Button = styled.button`
   background: #007bff;
   color: white;
   padding: 10px;
+  margin:10px;
   border-radius: 5px;
   cursor: pointer;
   font-size: 16px;

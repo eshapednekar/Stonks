@@ -44,7 +44,7 @@ const Portfolio = () => {
             <StockItem key={index}>
               <h3>{stock.name}</h3>
               <p>Shares: {stock.quantity}</p>
-              <p>Current Price: ${stock.price.toFixed(2)}</p>
+              <p>Avg Purchase Price: ${stock.avgPrice ? stock.avgPrice.toFixed(2) : "N/A"}</p>
             </StockItem>
           ))}
         </StockList>
@@ -73,7 +73,8 @@ const Header = styled.div`
 const Button = styled.button`
   background: #007bff;
   color: white;
-  padding: 10px;
+  padding: 15px;
+  margin: 10px;
   border-radius: 5px;
   cursor: pointer;
   font-size: 16px;
