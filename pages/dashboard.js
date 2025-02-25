@@ -58,7 +58,7 @@ const Dashboard = () => {
 
   const confirmTransaction = () => {
     let portfolio = JSON.parse(localStorage.getItem("portfolio")) || [];
-    let balance = parseFloat(localStorage.getItem("balance")) || 10000; // Default to $10,000 if not set
+    let balance = parseFloat(localStorage.getItem("balance")) || 10000; // Default to $10,000 
   
     if (transactionType === "buy") {
       const cost = selectedStock.price * quantity;
