@@ -7,6 +7,13 @@ const Portfolio = () => {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [portfolio, setPortfolio] = useState([]);
+  const [balance, setBalance] = useState(parseFloat(localStorage.getItem("balance")) || 10000);
+
+  useEffect(() => {
+    const storedBalance = parseFloat(localStorage.getItem("balance")) || 10000;
+    setBalance(storedBalance);
+  }, []);
+
 
   useEffect(() => {
     const storedPortfolio = JSON.parse(localStorage.getItem("portfolio")) || [];
@@ -31,11 +38,19 @@ const Portfolio = () => {
 
   return (
     <Container>
-      <Header>
-        <h1>📊 My Portfolio</h1>
-        <Button onClick={() => router.push("/dashboard")}>Go to Dashboard</Button>
-        <Button onClick={handleLogout}>Logout</Button>
-      </Header>
+       <Header>
+    <h1>Portfolio </h1>
+    <Controls>
+      <Button onClick={() => router.push("/dashboard")}>View Dashboard</Button>
+      <Button onClick={handleLogout}>Logout</Button>
+    </Controls>
+  </Header>
+
+  {/* Display Balance below the buttons */}
+  <BalanceRow>
+    <h2>💰 Balance: ${balance.toFixed(2)}</h2>
+  </BalanceRow>
+        
       {portfolio.length === 0 ? (
         <p>You don't own any stocks yet.</p>
       ) : (
@@ -57,24 +72,42 @@ export default Portfolio;
 
 // Styled Components
 const Container = styled.div`
-  text-align: center;
+  text-align: left;
   color: white;
   background: #0f0f0f;
   min-height: 100vh;
   padding: 20px;
 `;
 
+const Controls = styled.div`
+  display: flex;
+  justify-content: flex-end; 
+  align-items: flex-end;
+  width: 100%;
+  margin-top: 10px;
+  gap: 20px;
+`;
+
 const Header = styled.div`
   display: flex;
+  align-items: start;
   justify-content: space-between;
-  padding: 20px;
+  text-align: center;
+  margin-bottom: 20px;
+  width: 100%;
+`;
+const BalanceRow = styled.div`
+  text-align: right; 
+  margin-top: 10px;
+  width: 100%;
+  padding-right: 20px;
 `;
 
 const Button = styled.button`
   background: #007bff;
   color: white;
-  padding: 15px;
-  margin: 10px;
+  padding: 10px;
+  margin:10px;
   border-radius: 5px;
   cursor: pointer;
   font-size: 16px;

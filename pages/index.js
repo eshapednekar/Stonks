@@ -28,25 +28,16 @@ const Login = () => {
   };
   
 
-  const handleGoogleLogin = async () => {
-    try {
-      await signInWithPopup(auth, provider);
-      router.push("/dashboard");
-    } catch (err) {
-      setError("Google sign-in failed.");
-    }
-  };
 
   return (
     <Container>
       <LoginBox>
-        <h1>{isRegistering ? "📝 Sign Up for Stonks" : "🔑 Login to Stonks"}</h1>
+        <h1>{isRegistering ? "Sign Up" : "Login to Stonks"}</h1>
         {error && <ErrorMessage>{error}</ErrorMessage>}
         <Form onSubmit={handleAuth}>
           <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           <Button type="submit">{isRegistering ? "Sign Up" : "Login"}</Button>
-          <GoogleButton onClick={handleGoogleLogin}>Sign in with Google</GoogleButton>
         </Form>
         <ToggleText onClick={() => setIsRegistering(!isRegistering)}>
           {isRegistering ? "Already have an account? Login" : "New user? Sign Up"}

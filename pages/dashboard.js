@@ -5,7 +5,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import styled from "styled-components";
 import StockCard from "./components/StockCard";
 
-const STOCKS = ["SkibidiCoin", "RizzToken", "SigmaStock", "MemeCorp", "BrainRotInc"];
+const STOCKS = ["SkibidiCoin", "RizzToken", "SigmaStock", "MemeCorp", "BrainRotInc", "CloutCloud", "GrindSet", "DoomScroll"];
 
 const Dashboard = () => {
   const router = useRouter();
@@ -58,23 +58,38 @@ const Dashboard = () => {
 
   const confirmTransaction = () => {
     let portfolio = JSON.parse(localStorage.getItem("portfolio")) || [];
-    
+    let balance = parseFloat(localStorage.getItem("balance")) || 10000; // Default to $10,000 if not set
+  
     if (transactionType === "buy") {
+      const cost = selectedStock.price * quantity;
+      if (cost > balance) {
+        alert("Not enough funds to complete this purchase!");
+        return;
+      }
+  
       const existingStock = portfolio.find((s) => s.name === selectedStock.name);
       if (existingStock) {
         const prevTotalCost = existingStock.avgPrice * existingStock.quantity;
-      const newTotalCost = selectedStock.price * quantity;
-      const newTotalQuantity = existingStock.quantity + quantity;
-
-      existingStock.avgPrice = (prevTotalCost + newTotalCost) / newTotalQuantity;
-      existingStock.quantity = newTotalQuantity;
+        const newTotalCost = selectedStock.price * quantity;
+        const newTotalQuantity = existingStock.quantity + quantity;
+  
+        existingStock.avgPrice = (prevTotalCost + newTotalCost) / newTotalQuantity;
+        existingStock.quantity = newTotalQuantity;
       } else {
-        portfolio.push({ name: selectedStock.name, avgPrice: selectedStock.price, quantity });
+        portfolio.push({ 
+          name: selectedStock.name, 
+          avgPrice: selectedStock.price, 
+          quantity 
+        });
       }
+  
+      balance -= cost; // Deduct money for buying stocks
     } else {
       const stockIndex = portfolio.findIndex((s) => s.name === selectedStock.name);
       if (stockIndex !== -1 && portfolio[stockIndex].quantity >= quantity) {
         portfolio[stockIndex].quantity -= quantity;
+        balance += selectedStock.price * quantity; // Add money when selling
+  
         if (portfolio[stockIndex].quantity === 0) {
           portfolio.splice(stockIndex, 1);
         }
@@ -83,10 +98,12 @@ const Dashboard = () => {
         return;
       }
     }
-
+  
     localStorage.setItem("portfolio", JSON.stringify(portfolio));
+    localStorage.setItem("balance", balance.toFixed(2)); // Store balance
     setShowModal(false);
   };
+  
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -95,9 +112,13 @@ const Dashboard = () => {
 
   return (
     <Container>
-      <h1> Stonks 📈</h1>
+      <Header>
+      <h1> Stonks</h1>
+      <Controls>
       <Button onClick={() => router.push("/portfolio")}>View Portfolio</Button>
-      <Button onClick={handleLogout}>Logout</Button>     
+      <Button onClick={handleLogout}>Logout</Button> 
+      </Controls>    
+      </Header>
     {stocks.length === 0 ? (
       <p>Loading stocks...</p>
     ) : (<StockGrid>
@@ -143,10 +164,22 @@ const Container = styled.div`
   padding: 20px;
 `;
 
+const Controls = styled.div`
+  display: flex;
+  justify-content: flex-end; 
+  align-items: flex-end;
+  width: 100%;
+  margin-top: 10px;
+  gap: 20px;
+`;
+
 const Header = styled.div`
   display: flex;
+  align-items: start;
   justify-content: space-between;
-  padding: 20px;
+  text-align: center;
+  margin-bottom: 20px;
+  width: 100%;
 `;
 
 const Button = styled.button`
@@ -166,9 +199,12 @@ const Button = styled.button`
 
 const StockGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
   gap: 20px;
   padding: 20px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
 `;
 
 const Modal = styled.div`
