@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
 import styled from "styled-components";
-import { auth, db, provider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "../library/firebaseConfig";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
 const Login = () => {
