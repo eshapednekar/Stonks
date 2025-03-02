@@ -6,7 +6,7 @@ import {  doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
 
 const yahooApiKey = "68c0a7c7f6mshf5f0dcfc7db9b56p159e5fjsn05f2884b78fd";
-const yahooUrl = "https://apidojo-yahoo-finance-v1.p.rapidapi.com/stock/v2/get-timeseries?symbol=IBM&region=US";
+const yahooUrl = "https://yahoo-finance15.p.rapidapi.com/api/v2/markets/news?tickers=AAPL&type=ALL";
 
 const Portfolio = () => {
   const [user, setUser] = useState(null);
@@ -37,33 +37,46 @@ const Portfolio = () => {
 
 
   useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        const response = await fetch(yahooUrl, {
-          method: "GET",
-          headers: {
-            "X-RapidAPI-Key": yahooApiKey,
-            "X-RapidAPI-Host": "apidojo-yahoo-finance-v1.p.rapidapi.com"
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        if (data && data.news && Array.isArray(data.news)) {
-            setNewsArticles(data.news.slice(0, 2)); // Show 2 latest news articles
-        } else {
-            console.error("Unexpected API response format:", data);
-        }
-      } catch (error) {
-        console.error("Error fetching news:", error);
-      }
-    };
-
     fetchNews();
   }, []);
+
+  const fetchNews = async () => {
+    try {
+      const response = await fetch(yahooUrl, {
+        method: "GET",
+        headers: {
+          "X-RapidAPI-Key": yahooApiKey,
+          "X-RapidAPI-Host": "yahoo-finance15.p.rapidapi.com"
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+        
+        if (!data.body || !Array.isArray(data.body)) {
+            console.error("Unexpected data format:", data);
+            return;
+        }
+
+        const articles = data.body.slice(0, 3).map(article => ({
+            title: article.title,
+            url: article.url,
+            image: article.img,
+            source: article.source,
+            time: article.ago
+        }));
+        
+
+        console.log("Fetched News Articles:", articles);
+        setNewsArticles(articles);
+
+    } catch (error) {
+        console.error("Error fetching news:", error);
+    }
+};
 
   useEffect(() => {
     fetchPortfolioFromFirestore();
@@ -141,9 +154,9 @@ const Portfolio = () => {
             <AnalyticsHeading>
             <h2>Portfolio Insights</h2>
             </AnalyticsHeading>
-            <h2>Portfolio Split</h2>
             <p><strong>Total Amount Invested:</strong> ${totalInvested}</p>
             <PortfolioSplit>
+            <h3>Portfolio Split</h3>
             {portfolioSplit.length > 0 ? (
             <ul>
                 {portfolioSplit.map((stock, index) => (
@@ -157,21 +170,31 @@ const Portfolio = () => {
             </PortfolioSplit> 
             </AnalyticsContainer>
             <NewsContainer>
-            <h2> Stock Market News</h2>
-        {newsArticles.length > 0 ? (
-          newsArticles.map((article, index) => (
-            <NewsCard key={index}>
-              <h3>{article.title}</h3>
-              <p>{article.summary}</p>
-              <a href={article.link} target="_blank" rel="noopener noreferrer">Read More</a>
-            </NewsCard>
-            
-            ))
-        ) : (
-          <p>Loading stock news...</p>
-        )}
+            <NewsHeading>
+            <h2> Stock Market News</h2> 
+            </NewsHeading>
+            <NewsArticles>
+            {newsArticles.map((article, index) => (
+            <div key={index}>
+                <a href={article.url} target="_blank" rel="noopener noreferrer">
+                <h3>{article.title}</h3></a>
+                {article.image ? (
+    <img 
+      src={article.image} 
+      alt={article.title} 
+      style={{ width: "200px", height: "120px", objectFit: "cover", borderRadius: "5px" }} 
+    />
+  ) : (
+    <img 
+      src="/default-news-image.jpg" 
+      alt="No Image Available" 
+      style={{ width: "200px", height: "120px", objectFit: "cover", borderRadius: "5px" }} 
+    />
+  )}
+             </div>
+       )) }
+       </NewsArticles>
         </NewsContainer>
-         
         </>
       )}
     </Container>
@@ -235,12 +258,18 @@ const AnalyticsHeading = styled.div`
   text-align: center;
 `;
 
+const NewsHeading = styled.div`
+  background: #1a1a2e;
+  margin-top: 20px;
+  text-align: center;
+`;
+
 const AnalyticsContainer = styled.div`
   background: #1a1a2e;
   padding: 20px;
   border-radius: 10px;
   margin-top: 20px;
-  text-align: left;
+  text-align: center;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
 `;
 
@@ -251,9 +280,18 @@ const PortfolioSplit = styled.div`
 `;
 
 const NewsContainer = styled.div`
-  margin-top: 10px;
+  background: #1a1a2e;
+  padding: 20px;
+  border-radius: 10px;
+  margin-top: 20px;
   text-align: center;
-  padding-left: 20px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+`;
+
+const NewsArticles = styled.div`
+margin-top: 10px;
+text-align: left;
+padding-left: 20px;
 `;
 
 const Button = styled.button`
