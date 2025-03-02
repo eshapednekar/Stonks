@@ -1,35 +1,108 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { auth, signOut } from "../library/firebaseConfig";
+import { auth, db } from "../library/firebaseConfig";
+import {signOut} from "firebase/auth";
+import {  doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
 
+const yahooApiKey = "68c0a7c7f6mshf5f0dcfc7db9b56p159e5fjsn05f2884b78fd";
+const yahooUrl = "https://apidojo-yahoo-finance-v1.p.rapidapi.com/stock/v2/get-timeseries?symbol=IBM&region=US";
+
 const Portfolio = () => {
-  const router = useRouter();
+  const [user, setUser] = useState(null);
   const [portfolio, setPortfolio] = useState([]);
   const [totalInvested, setTotalInvested] = useState(0);
   const [portfolioSplit, setPortfolioSplit] = useState([]);
   const [balance, setBalance] = useState(10000); // Default balance
+  const [newsArticles, setNewsArticles] = useState([]);
+  const router = useRouter();
+
+  // Fetch users from firestore
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        setUser(user);
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          setPortfolio(data.portfolio || []);
+          setBalance(data.balance || 0);
+        }
+      }
+    };
+    fetchUserData();
+  }, []);
+
 
   useEffect(() => {
-    if (typeof window !== "undefined") { // Ensures localStorage runs only on the client
-      const storedPortfolio = JSON.parse(localStorage.getItem("portfolio")) || [];
-      setPortfolio(storedPortfolio);
+    const fetchNews = async () => {
+      try {
+        const response = await fetch(yahooUrl, {
+          method: "GET",
+          headers: {
+            "X-RapidAPI-Key": yahooApiKey,
+            "X-RapidAPI-Host": "apidojo-yahoo-finance-v1.p.rapidapi.com"
+          }
+        });
 
-      const storedBalance = parseFloat(localStorage.getItem("balance")) || 10000;
-      setBalance(storedBalance);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
 
-      // Calculate Total Invested
-      const total = storedPortfolio.reduce((sum, stock) => sum + stock.avgPrice * stock.quantity, 0);
-      setTotalInvested(total);
+        const data = await response.json();
+        if (data && data.news && Array.isArray(data.news)) {
+            setNewsArticles(data.news.slice(0, 2)); // Show 2 latest news articles
+        } else {
+            console.error("Unexpected API response format:", data);
+        }
+      } catch (error) {
+        console.error("Error fetching news:", error);
+      }
+    };
 
-      // Calculate Portfolio Split (%)
-      const split = storedPortfolio.map(stock => ({
-        name: stock.name,
-        percentage: total > 0 ? ((stock.avgPrice * stock.quantity) / total) * 100 : 0,
-      }));
-      setPortfolioSplit(split);
-    }
+    fetchNews();
   }, []);
+
+  useEffect(() => {
+    fetchPortfolioFromFirestore();
+  }, []);
+
+  const fetchPortfolioFromFirestore = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+  
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+  
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        const portfolio = userData.portfolio || [];
+  
+        // Calculate total amount invested
+        let totalInvested = portfolio.reduce((acc, stock) => {
+          return acc + (stock.avgPrice * stock.quantity || 0);
+        }, 0);
+  
+  
+        // Calculate portfolio split (percentage of each stock)
+        let portfolioSplit = portfolio.map(stock => ({
+          name: stock.name,
+          percentage: totalInvested > 0 ? ((stock.avgPrice * stock.quantity) / totalInvested) * 100 : 0,
+        }));
+  
+  
+        setTotalInvested(totalInvested.toFixed(2));
+        setPortfolioSplit(portfolioSplit);
+      } else {
+        console.error("User document does not exist.");
+      }
+    } catch (error) {
+      console.error("Error fetching portfolio from Firestore:", error);
+    }
+  };
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -63,21 +136,42 @@ const Portfolio = () => {
                 <p>Avg Purchase Price: ${stock.avgPrice ? stock.avgPrice.toFixed(2) : "N/A"}</p>
               </StockItem>
             ))}
-          </StockList>
-
-          
+          </StockList>          
           <AnalyticsContainer>
             <AnalyticsHeading>
             <h2>Portfolio Insights</h2>
-            <p><strong>Total Amount Invested:</strong> ${totalInvested.toFixed(2)}</p>
             </AnalyticsHeading>
             <h2>Portfolio Split</h2>
+            <p><strong>Total Amount Invested:</strong> ${totalInvested}</p>
             <PortfolioSplit>
-              {portfolioSplit.map((stock, index) => (
-                <p key={index}>{stock.name}: {stock.percentage.toFixed(2)}%</p>
-              ))}
-            </PortfolioSplit>
-          </AnalyticsContainer>
+            {portfolioSplit.length > 0 ? (
+            <ul>
+                {portfolioSplit.map((stock, index) => (
+                <li key={index}>
+                {stock.name}: {stock.percentage.toFixed(2)}% </li>
+                ))}
+            </ul>
+            ) : (
+            <p>No portfolio data available.</p>
+            )}
+            </PortfolioSplit> 
+            </AnalyticsContainer>
+            <NewsContainer>
+            <h2> Stock Market News</h2>
+        {newsArticles.length > 0 ? (
+          newsArticles.map((article, index) => (
+            <NewsCard key={index}>
+              <h3>{article.title}</h3>
+              <p>{article.summary}</p>
+              <a href={article.link} target="_blank" rel="noopener noreferrer">Read More</a>
+            </NewsCard>
+            
+            ))
+        ) : (
+          <p>Loading stock news...</p>
+        )}
+        </NewsContainer>
+         
         </>
       )}
     </Container>
@@ -156,6 +250,12 @@ const PortfolioSplit = styled.div`
   padding-left: 20px;
 `;
 
+const NewsContainer = styled.div`
+  margin-top: 10px;
+  text-align: center;
+  padding-left: 20px;
+`;
+
 const Button = styled.button`
   background: #007bff;
   color: white;
@@ -170,3 +270,4 @@ const Button = styled.button`
     background: #0056b3;
   }
 `;
+

@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { auth, signOut } from "../library/firebaseConfig";
+import { db, auth, signOut } from "../library/firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import styled from "styled-components";
 import StockCard from "./components/StockCard";
-
-const STOCKS = ["SkibidiCoin", "RizzToken", "SigmaStock", "MemeCorp", "BrainRotInc", "CloutCloud", "GrindSet", "DoomScroll"];
+import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
+import StockModal from "./components/StockModal";
 
 const Dashboard = () => {
   const router = useRouter();
-  const [stocks, setStocks] = useState([]);
+  const [stocks, setStocks] = useState(null);
   const [user, setUser] = useState(null);
   const [selectedStock, setSelectedStock] = useState(null);
   const [transactionType, setTransactionType] = useState("");
@@ -17,99 +17,91 @@ const Dashboard = () => {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    onAuthStateChanged(auth, (currentUser) => {
-      if (!currentUser) {
-        router.push("/"); // Redirect to login if not authenticated
-      } else {
-        setUser(currentUser);
-      }
-    });
-
-    fetchStockPrices();
-    const interval = setInterval(fetchStockPrices, 10000); // Update every 5s
+    const fetchAndUpdateStocks = async () => {
+      await fetchStocksFromFirestore();
+    };
+  
+    fetchAndUpdateStocks(); // Fetch once on load
+    const interval = setInterval(fetchAndUpdateStocks, 10000); // Update every 10s
+  
     return () => clearInterval(interval);
   }, []);
+  
 
-  const fetchStockPrices = async () => {
+  const fetchStocksFromFirestore = async () => {
     try {
-      const responses = await Promise.all(
-        STOCKS.map(async (stock) => {
-          const res = await fetch(
-            "https://www.random.org/integers/?num=1&min=-5&max=5&col=1&base=10&format=plain&rnd=new"
-          );
-          const text = await res.text();
-          const change = parseFloat(text.trim());
+      const stocksRef = collection(db, "stocks");
+      const stocksSnapshot = await getDocs(stocksRef);
+      
+      let stockList = stocksSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
   
-          return { name: stock, price: 100 + (change / 100) * 100 };
-        })
-      );
-      setStocks(responses);
+      console.log("Fetched stocks from Firestore:", stockList); // Debugging
+  
+      // Get random percentage changes for each stock using Random.org API
+      const randomNumbers = await fetchRandomPercentChanges(stockList.length);
+      console.log("Random.org values:", randomNumbers); // Debugging
+  
+      // Apply changes to stock prices
+      const updatedStocks = stockList.map((stock, index) => {
+        const changePercent = randomNumbers[index] / 100; // Convert to percentage
+        const newPrice = Number(stock.price) * (1 + changePercent); // Ensure it's a number
+        return { ...stock, price: Number(newPrice.toFixed(2)) };
+      });
+  
+      console.log("Updated stocks with new prices:", updatedStocks); // Debugging
+  
+      // Update state first
+      setStocks(updatedStocks);
+  
+      // Update Firestore asynchronously (but after setting state)
+      updatedStocks.forEach(async (stock) => {
+        const stockDoc = doc(db, "stocks", stock.id);
+        await updateDoc(stockDoc, { price: stock.price });
+      });
+  
     } catch (error) {
-      console.error("Error fetching stock prices:", error);
+      console.error("Error fetching stocks from Firestore:", error);
     }
   };
 
-  const handleTransaction = (stock, type) => {
-    setSelectedStock(stock);
-    setTransactionType(type);
-    setShowModal(true);
-    setQuantity(1);
-  };
-
-  const confirmTransaction = () => {
-    let portfolio = JSON.parse(localStorage.getItem("portfolio")) || [];
-    let balance = parseFloat(localStorage.getItem("balance")) || 10000;
+  const fetchRandomPercentChanges = async (count) => {
+    try {
+      const response = await fetch(
+        `https://www.random.org/integers/?num=${count}&min=-5&max=5&col=1&base=10&format=plain&rnd=new`
+      );
   
-    if (transactionType === "buy") {
-      const cost = selectedStock.price * quantity;
-      if (cost > balance) {
-        alert("Not enough funds to complete this purchase!");
-        return;
-      }
-  
-      const existingStock = portfolio.find((s) => s.name === selectedStock.name);
-      if (existingStock) {
-        const prevTotalCost = (existingStock.avgPrice || 0) * existingStock.quantity;
-        const newTotalCost = selectedStock.price * quantity;
-        const newTotalQuantity = existingStock.quantity + quantity;
-  
-        existingStock.avgPrice = (prevTotalCost + newTotalCost) / newTotalQuantity;
-        existingStock.quantity = newTotalQuantity;
-      } else {
-        portfolio.push({
-          name: selectedStock.name,
-          avgPrice: selectedStock.price || 0,
-          quantity,
-        });
-      }
-  
-      balance -= cost;
-    } else {
-      const stockIndex = portfolio.findIndex((s) => s.name === selectedStock.name);
-      if (stockIndex !== -1 && portfolio[stockIndex].quantity >= quantity) {
-        portfolio[stockIndex].quantity -= quantity;
-        balance += selectedStock.price * quantity;
-  
-        if (portfolio[stockIndex].quantity === 0) {
-          portfolio.splice(stockIndex, 1);
-        }
-      } else {
-        alert("Not enough shares to sell!");
-        return;
-      }
+      const text = await response.text();
+      const numbers = text.trim().split("\n").map(Number);
+      
+      console.log("Fetched random changes:", numbers); // Debugging
+      return numbers;
+    } catch (error) {
+      console.error("Error fetching random values:", error);
+      return Array(count).fill(0); // Default to 0 change if API fails
     }
-  
-    localStorage.setItem("portfolio", JSON.stringify(portfolio));
-    localStorage.setItem("balance", balance.toFixed(2));
+  };  
+
+ 
+const openModal = (stock, type) => {
+  setSelectedStock(stock);
+  setTransactionType(type);
+  setShowModal(true);
+};
+
+  const closeModal = () => {
+    setSelectedStock(null);
+    setTransactionType("");
     setShowModal(false);
-  };
-   
-  
+  };  
 
   const handleLogout = async () => {
     await signOut(auth);
     router.push("/");
   };
+
 
   return (
     <Container>
@@ -121,35 +113,30 @@ const Dashboard = () => {
       <Button onClick={handleLogout}>Logout</Button> 
       </Controls>    
       </Header>
-    {stocks.length === 0 ? (
-      <p>Loading stocks...</p>
-    ) : (<StockGrid>
+      {!stocks ? (
+  <p>Loading stocks...</p>
+) : stocks.length === 0 ? (
+  <p>No stocks available.</p>
+  ) : (
+    <StockGrid>
       {stocks.map((stock, index) => (
         <StockCard
           key={index}
           stock={stock}
-          onBuy={() => handleTransaction(stock, "buy")}
-          onSell={() => handleTransaction(stock, "sell")}
+          onBuy={() => openModal(stock, "buy")}
+          onSell={() => openModal(stock, "sell")}
         />
       ))}
     </StockGrid>
     )}
-    {showModal && (
-      <Modal>
-        <ModalContent>
-          <h2>{transactionType === "buy" ? "Buy" : "Sell"} {selectedStock?.name}</h2>
-          <p>Price: ${selectedStock?.price.toFixed(2)}</p>
-          <label>Quantity:</label>
-          <input type="number" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} min="1" />
-          <ModalButtons>
-          <Button onClick={confirmTransaction}>Confirm</Button>
-          <Button onClick={() => setShowModal(false)}>Cancel</Button>
-        </ModalButtons>
-        </ModalContent>
-      </Modal>
-    
-
-    )}
+      {showModal && selectedStock && (
+        <StockModal
+          stock={selectedStock}
+          isOpen={showModal}
+          onClose={closeModal}
+          action={transactionType}
+        />
+      )}
     </Container>
   );
 };
