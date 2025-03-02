@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
 import styled from "styled-components";
-import { auth, provider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "../library/firebaseConfig";
+import { auth, db, provider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 const Login = () => {
   const router = useRouter();
@@ -9,17 +10,36 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isRegistering, setIsRegistering] = useState(false); // Toggle for Sign-up/Login
+  const [loading, setLoading] = useState(false);
+
+    // Function to create a Firestore document for new users
+    const createUserDocument = async (user) => {
+        if (!user) return;
+    
+        const userRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userRef);
+    
+        if (!userDoc.exists()) {
+          await setDoc(userRef, {
+            balance: 10000,  // Starting balance
+            portfolio: []    // Empty portfolio
+          });
+        }
+      };
 
   const handleAuth = async (e) => {
     e.preventDefault();
     try {
+    let userCredential;
       if (isRegistering) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
         console.log("User registered successfully:", email);
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
         console.log("User logged in successfully:", email);
       }
+      const user = userCredential.user;
+      await createUserDocument(user);
       router.push("/dashboard");
     } catch (err) {
       console.error("Firebase Auth Error:", err.code, err.message);
@@ -37,7 +57,9 @@ const Login = () => {
         <Form onSubmit={handleAuth}>
           <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          <Button type="submit">{isRegistering ? "Sign Up" : "Login"}</Button>
+          <Button type="submit"disabled={loading}>
+            {loading ? "Processing..." : isRegistering ? "Sign Up" : "Login"}
+          </Button>
         </Form>
         <ToggleText onClick={() => setIsRegistering(!isRegistering)}>
           {isRegistering ? "Already have an account? Login" : "New user? Sign Up"}
