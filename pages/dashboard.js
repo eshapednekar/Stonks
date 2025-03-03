@@ -97,12 +97,6 @@ const openModal = (stock, type) => {
     setShowModal(false);
   };  
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push("/");
-  };
-
-
   return (
     <Container>
       <Header>
@@ -110,7 +104,6 @@ const openModal = (stock, type) => {
       <Controls>
       <Button onClick={() => router.push("/portfolio")}>View Portfolio</Button>
       <Button onClick={() => router.push("/settings")}>Settings</Button>
-      <Button onClick={handleLogout}>Logout</Button> 
       </Controls>    
       </Header>
       {!stocks ? (
@@ -196,28 +189,3 @@ const StockGrid = styled.div`
   margin: 0 auto;
 `;
 
-const Modal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;
-
-const ModalContent = styled.div`
-  background: #1a1a2e;
-  padding: 20px;
-  border-radius: 10px;
-  text-align: center;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-`;
-
-const ModalButtons = styled.div`
-  display: flex;
-  justify-content: space-around;
-  margin-top: 10px;
-`;

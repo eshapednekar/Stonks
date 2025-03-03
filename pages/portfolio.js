@@ -117,11 +117,6 @@ const Portfolio = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push("/");
-  };
-
   return (
     <Container>
       <Header>
@@ -130,7 +125,6 @@ const Portfolio = () => {
           <div>
             <Button onClick={() => router.push("/dashboard")}>View Dashboard</Button>
             <Button onClick={() => router.push("/settings")}>Settings</Button>
-            <Button onClick={handleLogout}>Logout</Button>
           </div> 
         </ControlsColumn>
       </Header>
