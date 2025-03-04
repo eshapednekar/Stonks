@@ -96,7 +96,7 @@ const Portfolio = () => {
             <AnalyticsHeading>
             <h2>Portfolio Insights</h2>
             </AnalyticsHeading>
-            <p><strong>Total Amount Invested:</strong> ${totalInvested}</p>
+            <p><strong>Total Amount Invested:</strong> ${totalInvested.toFixed(2)}</p>
             <PortfolioSplit>
             <h3>Portfolio Split</h3>
             {portfolioSplit.length > 0 ? (

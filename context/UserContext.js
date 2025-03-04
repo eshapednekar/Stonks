@@ -1,12 +1,10 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { auth, db } from "/library/firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, updateDoc } from "firebase/firestore";
 
-// Create the context
 const UserContext = createContext();
 
-// Create provider component
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,10 +51,10 @@ export const UserProvider = ({ children }) => {
       const stocksData = {};
 
       stocksSnapshot.forEach((doc) => {
-        stocksData[doc.id] = doc.data(); // Store stock price by name
+        stocksData[doc.id] = doc.data();
       });
 
-      console.log("Fetched Stocks Data:", stocksData); 
+      console.log("Fetched Stocks Data:", stocksData);
       setStocks(stocksData);
     } catch (error) {
       console.error("Error fetching stock data:", error);
@@ -66,8 +64,6 @@ export const UserProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       fetchStockData();
-      const interval = setInterval(fetchStockData, 10000); // Refresh every 10s
-      return () => clearInterval(interval);
     }
   }, [user]);
 
@@ -85,34 +81,43 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // Update stock prices with random fluctuations
-  const updateStockPrices = async () => {
-    try {
-      const stockKeys = Object.keys(stocks);
-      if (stockKeys.length === 0) return;
+  useEffect(() => {
+    if (Object.keys(stocks).length === 0) return;
 
-      const randomNumbers = await fetchRandomPercentChanges(stockKeys.length);
-      const updatedStocks = {};
+    const updateStockPrices = async () => {
+      try {
+        const stockKeys = Object.keys(stocks);
+        if (stockKeys.length === 0) return;
 
-      stockKeys.forEach((stockName, index) => {
-        const stock = stocks[stockName];
-        const changePercent = randomNumbers[index] / 100;
-        const newPrice = Number(stock.price) * (1 + changePercent);
-        updatedStocks[stockName] = { ...stock, price: Number(newPrice.toFixed(2)) };
-      });
+        const randomNumbers = await fetchRandomPercentChanges(stockKeys.length);
+        const updatedStocks = {};
 
-      console.log("Updated Stocks with Random Prices:", updatedStocks);
-      setStocks(updatedStocks);
+        stockKeys.forEach((stockName, index) => {
+          const stock = stocks[stockName];
+          const changePercent = randomNumbers[index] / 100;
+          const newPrice = Number(stock.price) * (1 + changePercent);
+          updatedStocks[stockName] = { ...stock, price: Number(newPrice.toFixed(2)) };
+        });
 
-      // Update Firestore
-      for (const stockName in updatedStocks) {
-        const stockDoc = doc(db, "stocks", stockName);
-        await updateDoc(stockDoc, { price: updatedStocks[stockName].price });
+        console.log("Updated Stocks with Random Prices:", updatedStocks);
+        setStocks(updatedStocks);
+
+        // Update Firestore
+        for (const stockName in updatedStocks) {
+          const stockDoc = doc(db, "stocks", stockName);
+          await updateDoc(stockDoc, { price: updatedStocks[stockName].price });
+        }
+      } catch (error) {
+        console.error("Error updating stock prices:", error);
       }
-    } catch (error) {
-      console.error("Error updating stock prices:", error);
-    }
-  };
+    };
+
+    // Update stock prices every 10 seconds
+    updateStockPrices();
+    const interval = setInterval(updateStockPrices, 10000);
+
+    return () => clearInterval(interval);
+  }, [stocks]); 
 
   return (
     <UserContext.Provider value={{ user, loading, balance, portfolio, stocks, setBalance, setPortfolio }}>
@@ -121,5 +126,4 @@ export const UserProvider = ({ children }) => {
   );
 };
 
-// Hook to use the context
 export const useUser = () => useContext(UserContext);
