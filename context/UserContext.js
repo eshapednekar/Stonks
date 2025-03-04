@@ -71,6 +71,49 @@ export const UserProvider = ({ children }) => {
     }
   }, [user]);
 
+  // Fetch random price changes from Random.org
+  const fetchRandomPercentChanges = async (count) => {
+    try {
+      const response = await fetch(
+        `https://www.random.org/integers/?num=${count}&min=-5&max=5&col=1&base=10&format=plain&rnd=new`
+      );
+      const text = await response.text();
+      return text.trim().split("\n").map(Number);
+    } catch (error) {
+      console.error("Error fetching random values:", error);
+      return Array(count).fill(0);
+    }
+  };
+
+  // Update stock prices with random fluctuations
+  const updateStockPrices = async () => {
+    try {
+      const stockKeys = Object.keys(stocks);
+      if (stockKeys.length === 0) return;
+
+      const randomNumbers = await fetchRandomPercentChanges(stockKeys.length);
+      const updatedStocks = {};
+
+      stockKeys.forEach((stockName, index) => {
+        const stock = stocks[stockName];
+        const changePercent = randomNumbers[index] / 100;
+        const newPrice = Number(stock.price) * (1 + changePercent);
+        updatedStocks[stockName] = { ...stock, price: Number(newPrice.toFixed(2)) };
+      });
+
+      console.log("Updated Stocks with Random Prices:", updatedStocks);
+      setStocks(updatedStocks);
+
+      // Update Firestore
+      for (const stockName in updatedStocks) {
+        const stockDoc = doc(db, "stocks", stockName);
+        await updateDoc(stockDoc, { price: updatedStocks[stockName].price });
+      }
+    } catch (error) {
+      console.error("Error updating stock prices:", error);
+    }
+  };
+
   return (
     <UserContext.Provider value={{ user, loading, balance, portfolio, stocks, setBalance, setPortfolio }}>
       {!loading && children} 

@@ -5,83 +5,21 @@ import styled from "styled-components";
 import StockCard from "./components/StockCard";
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
 import StockModal from "./components/StockModal";
+import { useUser } from "../context/UserContext";
+
 
 const Dashboard = () => {
   const router = useRouter();
-  const [stocks, setStocks] = useState(null);
   const [selectedStock, setSelectedStock] = useState(null);
   const [transactionType, setTransactionType] = useState("");
   const [showModal, setShowModal] = useState(false);
-
-  useEffect(() => {
-    const fetchAndUpdateStocks = async () => {
-      await fetchStocksFromFirestore();
-    };
-  
-    fetchAndUpdateStocks();
-    const interval = setInterval(fetchAndUpdateStocks, 10000); // Update every 10s
-  
-    return () => clearInterval(interval);
-  }, []);
-  
-
-  const fetchStocksFromFirestore = async () => {
-    try {
-      const stocksRef = collection(db, "stocks");
-      const stocksSnapshot = await getDocs(stocksRef);
-      
-      let stockList = stocksSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-  
-      console.log("Fetched stocks from Firestore:", stockList);
-  
-      // Get random percentage changes for each stock using Random.org API
-      const randomNumbers = await fetchRandomPercentChanges(stockList.length);
-      console.log("Random.org values:", randomNumbers); // Debugging
-  
-      // Apply changes to stock prices
-      const updatedStocks = stockList.map((stock, index) => {
-        const changePercent = randomNumbers[index] / 100; 
-        const newPrice = Number(stock.price) * (1 + changePercent); 
-        return { ...stock, price: Number(newPrice.toFixed(2)) };
-      });
-  
-      console.log("Updated stocks with new prices:", updatedStocks); 
-  
-      setStocks(updatedStocks);
-  
-      // Update Firestore asynchronously (but after setting state)
-      updatedStocks.forEach(async (stock) => {
-        const stockDoc = doc(db, "stocks", stock.id);
-        await updateDoc(stockDoc, { price: stock.price });
-      });
-  
-    } catch (error) {
-      console.error("Error fetching stocks from Firestore:", error);
-    }
-  };
-
-  const fetchRandomPercentChanges = async (count) => {
-    try {
-      const response = await fetch(
-        `https://www.random.org/integers/?num=${count}&min=-5&max=5&col=1&base=10&format=plain&rnd=new`
-      );
-  
-      const text = await response.text();
-      const numbers = text.trim().split("\n").map(Number);
-      
-      console.log("Fetched random changes:", numbers); 
-      return numbers;
-    } catch (error) {
-      console.error("Error fetching random values:", error);
-      return Array(count).fill(0); 
-    }
-  };  
-
+  const { user, stocks } = useUser();
  
-const openModal = (stock, type) => {
+  const openModal = (stock, type) => {
+  if (!user) {
+    alert("You need to log in to perform transactions.");
+    return;
+  }
   setSelectedStock(stock);
   setTransactionType(type);
   setShowModal(true);
@@ -104,16 +42,16 @@ const openModal = (stock, type) => {
       </Header>
       {!stocks ? (
   <p>Loading stocks...</p>
-) : stocks.length === 0 ? (
+) : !stocks || Object.keys(stocks).length === 0? (
   <p>No stocks available.</p>
   ) : (
     <StockGrid>
-      {stocks.map((stock, index) => (
+      {Object.keys(stocks).map((stockName) => (
         <StockCard
-          key={index}
-          stock={stock}
-          onBuy={() => openModal(stock, "buy")}
-          onSell={() => openModal(stock, "sell")}
+          key={stockName}
+          stock={stocks[stockName]}
+          onBuy={() => openModal(stocks[stockName], "buy")}
+          onSell={() => openModal(stocks[stockName], "sell")}
         />
       ))}
     </StockGrid>
