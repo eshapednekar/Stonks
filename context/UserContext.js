@@ -56,7 +56,7 @@ export const UserProvider = ({ children }) => {
         stocksData[doc.id] = doc.data(); // Store stock price by name
       });
 
-      console.log("Fetched Stocks Data:", stocksData); // Debug log
+      console.log("Fetched Stocks Data:", stocksData); 
       setStocks(stocksData);
     } catch (error) {
       console.error("Error fetching stock data:", error);
@@ -73,7 +73,7 @@ export const UserProvider = ({ children }) => {
 
   return (
     <UserContext.Provider value={{ user, loading, balance, portfolio, stocks, setBalance, setPortfolio }}>
-      {!loading && children} {/* Prevent rendering until user is loaded */}
+      {!loading && children} 
     </UserContext.Provider>
   );
 };

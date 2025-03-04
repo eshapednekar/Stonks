@@ -18,7 +18,7 @@ const Dashboard = () => {
       await fetchStocksFromFirestore();
     };
   
-    fetchAndUpdateStocks(); // Fetch once on load
+    fetchAndUpdateStocks();
     const interval = setInterval(fetchAndUpdateStocks, 10000); // Update every 10s
   
     return () => clearInterval(interval);
@@ -35,7 +35,7 @@ const Dashboard = () => {
         ...doc.data(),
       }));
   
-      console.log("Fetched stocks from Firestore:", stockList); // Debugging
+      console.log("Fetched stocks from Firestore:", stockList);
   
       // Get random percentage changes for each stock using Random.org API
       const randomNumbers = await fetchRandomPercentChanges(stockList.length);
@@ -43,14 +43,13 @@ const Dashboard = () => {
   
       // Apply changes to stock prices
       const updatedStocks = stockList.map((stock, index) => {
-        const changePercent = randomNumbers[index] / 100; // Convert to percentage
-        const newPrice = Number(stock.price) * (1 + changePercent); // Ensure it's a number
+        const changePercent = randomNumbers[index] / 100; 
+        const newPrice = Number(stock.price) * (1 + changePercent); 
         return { ...stock, price: Number(newPrice.toFixed(2)) };
       });
   
-      console.log("Updated stocks with new prices:", updatedStocks); // Debugging
+      console.log("Updated stocks with new prices:", updatedStocks); 
   
-      // Update state first
       setStocks(updatedStocks);
   
       // Update Firestore asynchronously (but after setting state)
@@ -73,11 +72,11 @@ const Dashboard = () => {
       const text = await response.text();
       const numbers = text.trim().split("\n").map(Number);
       
-      console.log("Fetched random changes:", numbers); // Debugging
+      console.log("Fetched random changes:", numbers); 
       return numbers;
     } catch (error) {
       console.error("Error fetching random values:", error);
-      return Array(count).fill(0); // Default to 0 change if API fails
+      return Array(count).fill(0); 
     }
   };  
 

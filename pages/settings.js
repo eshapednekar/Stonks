@@ -15,20 +15,20 @@ const Settings = () => {
     console.log("Balance:", balance);
   console.log("Portfolio:", portfolio);
   console.log("Stocks:", stocks);
-    if (balance !== null && stocks && portfolio) {  // Ensure balance is updated before calculation
+    if (balance !== null && stocks && portfolio) {  
       const totalInvestment = portfolio.reduce((total, stock) => {
         if (!stocks[stock.name]) {
           console.warn(`Stock data missing for: ${stock?.name}`);
-          return total; // Skip if stock data is missing
+          return total; 
         }
   
         const currentPrice = stocks[stock.name]?.price ?? stock.avgPrice ?? 0;
         return total + stock.quantity * currentPrice;
       }, 0);
   
-      setTotalIndividualValue(balance + totalInvestment);  // Update TIV after balance is set
+      setTotalIndividualValue(balance + totalInvestment);  
     }
-  }, [balance, stocks, portfolio]); // Runs whenever balance, stocks, or portfolio changes
+  }, [balance, stocks, portfolio]); 
   
 
   const handleLogout = async () => {

@@ -22,8 +22,8 @@ const Login = () => {
     
         if (!userDoc.exists()) {
           await setDoc(userRef, {
-            balance: 10000,  // Starting balance
-            portfolio: []    // Empty portfolio
+            balance: 10000,  
+            portfolio: []    
           });
         }
       };
