@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { db, auth, signOut } from "../library/firebaseConfig";
-import { onAuthStateChanged } from "firebase/auth";
+import { db } from "../library/firebaseConfig";
 import styled from "styled-components";
 import StockCard from "./components/StockCard";
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
@@ -10,10 +9,8 @@ import StockModal from "./components/StockModal";
 const Dashboard = () => {
   const router = useRouter();
   const [stocks, setStocks] = useState(null);
-  const [user, setUser] = useState(null);
   const [selectedStock, setSelectedStock] = useState(null);
   const [transactionType, setTransactionType] = useState("");
-  const [quantity, setQuantity] = useState(1);
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {

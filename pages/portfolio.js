@@ -1,39 +1,26 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { auth, db } from "../library/firebaseConfig";
-import {signOut} from "firebase/auth";
-import {  doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
+import { useUser } from "../context/UserContext";
 
 const yahooApiKey = "68c0a7c7f6mshf5f0dcfc7db9b56p159e5fjsn05f2884b78fd";
 const yahooUrl = "https://yahoo-finance15.p.rapidapi.com/api/v2/markets/news?tickers=AAPL&type=ALL";
 
 const Portfolio = () => {
-  const [user, setUser] = useState(null);
-  const [portfolio, setPortfolio] = useState([]);
-  const [totalInvested, setTotalInvested] = useState(0);
-  const [portfolioSplit, setPortfolioSplit] = useState([]);
-  const [balance, setBalance] = useState(10000); // Default balance
+  const { user, balance, portfolio } = useUser();
   const [newsArticles, setNewsArticles] = useState([]);
   const router = useRouter();
 
-  // Fetch users from firestore
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        setUser(user);
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          const data = userSnap.data();
-          setPortfolio(data.portfolio || []);
-          setBalance(data.balance || 0);
-        }
-      }
-    };
-    fetchUserData();
-  }, []);
+  // Calculate total amount invested
+  let totalInvested = portfolio.reduce((acc, stock) => {
+    return acc + (stock.avgPrice * stock.quantity || 0);
+  }, 0);
+
+  // Calculate portfolio split
+  let portfolioSplit = portfolio.map(stock => ({
+    name: stock.name,
+    percentage: totalInvested > 0 ? ((stock.avgPrice * stock.quantity) / totalInvested) * 100 : 0,
+  }));
 
 
   useEffect(() => {
@@ -76,46 +63,7 @@ const Portfolio = () => {
     } catch (error) {
         console.error("Error fetching news:", error);
     }
-};
-
-  useEffect(() => {
-    fetchPortfolioFromFirestore();
-  }, []);
-
-  const fetchPortfolioFromFirestore = async () => {
-    try {
-      const user = auth.currentUser;
-      if (!user) return;
-  
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-  
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
-        const portfolio = userData.portfolio || [];
-  
-        // Calculate total amount invested
-        let totalInvested = portfolio.reduce((acc, stock) => {
-          return acc + (stock.avgPrice * stock.quantity || 0);
-        }, 0);
-  
-  
-        // Calculate portfolio split (percentage of each stock)
-        let portfolioSplit = portfolio.map(stock => ({
-          name: stock.name,
-          percentage: totalInvested > 0 ? ((stock.avgPrice * stock.quantity) / totalInvested) * 100 : 0,
-        }));
-  
-  
-        setTotalInvested(totalInvested.toFixed(2));
-        setPortfolioSplit(portfolioSplit);
-      } else {
-        console.error("User document does not exist.");
-      }
-    } catch (error) {
-      console.error("Error fetching portfolio from Firestore:", error);
-    }
-  };
+    };
 
   return (
     <Container>

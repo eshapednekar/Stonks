@@ -1,4 +1,5 @@
 import { createGlobalStyle, ThemeProvider } from "styled-components";
+import { UserProvider } from "../context/UserContext";
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -17,10 +18,12 @@ const theme = {
 
 function MyApp({ Component, pageProps }) {
   return (
+    <UserProvider>
     <ThemeProvider theme={theme}>
       <GlobalStyle />
       <Component {...pageProps} />
     </ThemeProvider>
+    </UserProvider>
   );
 }
 

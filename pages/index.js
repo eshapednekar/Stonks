@@ -44,7 +44,7 @@ const Login = () => {
       router.push("/dashboard");
     } catch (err) {
       console.error("Firebase Auth Error:", err.code, err.message);
-      setError(`Error: ${err.message}`);
+      setError("Invalid credentials");
     }
   };
   

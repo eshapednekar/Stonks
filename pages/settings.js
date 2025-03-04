@@ -4,62 +4,32 @@ import styled from "styled-components";
 import { auth, db, signOut } from "../library/firebaseConfig";
 import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import { useUser } from "../context/UserContext";
 
 const Settings = () => {
   const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [balance, setBalance] = useState(0);
-  const [portfolio, setPortfolio] = useState([]);
+  const { user, balance, portfolio, stocks } = useUser();
   const [totalIndividualValue, setTotalIndividualValue] = useState(0);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (!currentUser) {
-        router.push("/"); // Redirect if not logged in
-      } else {
-        setUser(currentUser);
-        await fetchUserData(currentUser.uid);
-      }
-    });
-    return () => unsubscribe(); // Cleanup on unmount
-  }, []);
-
-  const fetchUserData = async (uid) => {
-    try {
-      const userRef = doc(db, "users", uid);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
-        setBalance(userData.balance || 0);
-        setPortfolio(userData.portfolio || []);
-        await calculateTotalValue(userData.portfolio);
-      }
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-    }
-  };
-
-  const calculateTotalValue = async (portfolio) => {
-    try {
-      const stocksRef = collection(db, "stocks");
-      const stocksSnapshot = await getDocs(stocksRef);
-      const stockPrices = {};
-
-      stocksSnapshot.forEach((doc) => {
-        stockPrices[doc.id] = doc.data().price; // Get latest stock price
-      });
-
-      const portfolioValue = portfolio.reduce((total, stock) => {
-        const currentPrice = stockPrices[stock.name] || 0;
+    console.log("Balance:", balance);
+  console.log("Portfolio:", portfolio);
+  console.log("Stocks:", stocks);
+    if (balance !== null && stocks && portfolio) {  // Ensure balance is updated before calculation
+      const totalInvestment = portfolio.reduce((total, stock) => {
+        if (!stocks[stock.name]) {
+          console.warn(`Stock data missing for: ${stock?.name}`);
+          return total; // Skip if stock data is missing
+        }
+  
+        const currentPrice = stocks[stock.name]?.price ?? stock.avgPrice ?? 0;
         return total + stock.quantity * currentPrice;
       }, 0);
-
-      setTotalIndividualValue(balance + portfolioValue);
-    } catch (error) {
-      console.error("Error calculating portfolio value:", error);
+  
+      setTotalIndividualValue(balance + totalInvestment);  // Update TIV after balance is set
     }
-  };
+  }, [balance, stocks, portfolio]); // Runs whenever balance, stocks, or portfolio changes
+  
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -79,9 +49,9 @@ const Settings = () => {
         {user ? (
           <>
             <UserInfo><strong>Email:</strong> {user.email}</UserInfo>
-            <UserInfo><strong>Current Balance:</strong> ${balance.toFixed(2)}</UserInfo>
-            <UserInfo><strong>Stocks Owned:</strong> {portfolio.length} stocks</UserInfo>
-            <UserInfo><strong>Total Individual Value:</strong> ${totalIndividualValue.toFixed(2)}</UserInfo>
+            <UserInfo><strong>Current Balance:</strong> ${balance.toFixed(2) || "Loading..."}</UserInfo>
+            <UserInfo><strong>Stocks Owned:</strong> {portfolio.length || 0} stocks</UserInfo>
+            <UserInfo><strong>Total Individual Value:</strong> ${totalIndividualValue.toFixed(2) || "Loading..."}</UserInfo>
           </>
         ) : (
           <p>Loading user information...</p>
