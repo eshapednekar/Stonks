@@ -2,38 +2,32 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import { auth, db } from "../../library/firebaseConfig";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { useUser } from "../../context/UserContext";
 
 const StockModal = ({ stock, isOpen, onClose, action }) => {
     const [quantity, setQuantity] = useState(1);
     const [error, setError] = useState("");
-    const { user, balance, portfolio, setBalance, setPortfolio } = useUser();
 
     if (!isOpen || !stock) return null;
 
     const handleConfirm = async () => {
-        if (!user) {
-            setError("You need to log in to perform transactions.");
-            return;
-        }
-    
+        if (!auth.currentUser) return;
         setError(""); // Reset errors
-    
-        const userRef = doc(db, "users", user.uid);
+
+        const userRef = doc(db, "users", auth.currentUser.uid);
         const userSnap = await getDoc(userRef);
-    
+
         if (!userSnap.exists()) {
             setError("User data not found.");
             return;
         }
-    
+
         let userData = userSnap.data();
         let newBalance = userData.balance;
         let updatedPortfolio = [...userData.portfolio];
-    
-        // Find stock in portfolio
+
+        // Check if stock already exists in the portfolio
         const stockIndex = updatedPortfolio.findIndex((s) => s.name === stock.name);
-    
+
         if (action === "buy") {
             const totalCost = stock.price * quantity;
             if (newBalance < totalCost) {
@@ -41,16 +35,16 @@ const StockModal = ({ stock, isOpen, onClose, action }) => {
                 return;
             }
             newBalance -= totalCost;
-    
+
             if (stockIndex !== -1) {
-                // Update existing stock quantity & avg price
+                // Update existing stock quantity and avg price
                 let existingStock = updatedPortfolio[stockIndex];
-                let newQuantity = existingStock.quantity + quantity;
-                let newAvgPrice = ((existingStock.avgPrice * existingStock.quantity) + (stock.price * quantity)) / newQuantity;
-    
+                let totalShares = existingStock.quantity + quantity;
+                let newAvgPrice = ((existingStock.avgPrice * existingStock.quantity) + (stock.price * quantity)) / totalShares;
+
                 updatedPortfolio[stockIndex] = {
                     ...existingStock,
-                    quantity: newQuantity,
+                    quantity: totalShares,
                     avgPrice: newAvgPrice
                 };
             } else {
@@ -69,24 +63,20 @@ const StockModal = ({ stock, isOpen, onClose, action }) => {
             let stockToSell = updatedPortfolio[stockIndex];
             stockToSell.quantity -= quantity;
             newBalance += stock.price * quantity;
-    
+
             if (stockToSell.quantity === 0) {
                 updatedPortfolio.splice(stockIndex, 1); // Remove stock if all shares are sold
             }
         }
-    
+
+        // Update Firestore
         await updateDoc(userRef, {
             balance: newBalance,
             portfolio: updatedPortfolio
         });
-    
-        setBalance(newBalance);
-        setPortfolio(updatedPortfolio);
-    
-        console.log(`${action === "buy" ? "Bought" : "Sold"} ${quantity} ${stock.name}`);
-        onClose(); 
+
+        onClose(); // Close modal
     };
-    
 
     return (
         <ModalOverlay>

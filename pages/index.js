@@ -22,8 +22,8 @@ const Login = () => {
     
         if (!userDoc.exists()) {
           await setDoc(userRef, {
-            balance: 10000,  
-            portfolio: []    
+            balance: 10000,  // Starting balance
+            portfolio: []    // Empty portfolio
           });
         }
       };
@@ -44,7 +44,7 @@ const Login = () => {
       router.push("/dashboard");
     } catch (err) {
       console.error("Firebase Auth Error:", err.code, err.message);
-      setError("Invalid credentials");
+      setError(`Error: ${err.message}`);
     }
   };
   
