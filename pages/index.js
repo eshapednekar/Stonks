@@ -51,22 +51,50 @@ const Login = () => {
 
 
   return (
-    <Container>
-      <LoginBox>
+    <div style={{display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      height: "100vh",
+      backgroundColor: "#0f0f0f",
+      color: "white"}}>
+      <div style={{
+        background: "#1a1a2e",
+        padding: "40px",
+        borderRadius: "10px",
+        textAlign: "center",
+        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.3)"
+      }}>
         <h1>{isRegistering ? "Sign Up" : "Login to Stonks"}</h1>
-        {error && <ErrorMessage>{error}</ErrorMessage>}
-        <Form onSubmit={handleAuth}>
-          <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          <Button type="submit"disabled={loading}>
+        {error && <p style={{color: "red"}}>{error}</p>}
+        <form onSubmit={handleAuth} style = {{  display: "flex", flexDirection: "column",  gap: "10px"}}>
+          <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{  
+            padding: "10px",
+            borderRadius: "5px",
+            border: "none"}}/>
+          <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{  
+            padding: "10px",
+            borderRadius: "5px",
+            border: "none"}}/>
+          <button type="submit"disabled={loading} style={{  
+            background: "#4caf50",
+            color: "white",
+            padding: "10px",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer"}}>
             {loading ? "Processing..." : isRegistering ? "Sign Up" : "Login"}
-          </Button>
-        </Form>
-        <ToggleText onClick={() => setIsRegistering(!isRegistering)}>
+          </button>
+        </form>
+        <p onClick={() => setIsRegistering(!isRegistering)} style={{
+          color: "lightgray",
+          cursor: "pointer",
+          marginTop: "10px",
+          textDecoration: "underline",
+        }}>
           {isRegistering ? "Already have an account? Login" : "New user? Sign Up"}
-        </ToggleText>
-      </LoginBox>
-    </Container>
+        </p>
+      </div>
+    </div>
   );
 };
 
@@ -90,11 +118,6 @@ const LoginBox = styled.div`
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
 `;
 
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-`;
 
 const Input = styled.input`
   padding: 10px;
